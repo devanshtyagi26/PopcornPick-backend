@@ -13,8 +13,9 @@ def recommend(movie):
 
     recommended_movies = []
     for i in movies_list:
+        movie_id = i[0]
         recommended_movies.append(movies.iloc[i[0]].title)
-    return recommended_movies
+    return [movie_id, recommended_movies]
 
 movies_dict= pickle.load(open('data/movie_dict.pkl', 'rb'))
 movies = pd.DataFrame(movies_dict)
