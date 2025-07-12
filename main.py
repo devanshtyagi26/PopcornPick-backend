@@ -1,60 +1,37 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel  
 from typing import List
 import pickle
 import pandas as pd
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import os
 
-def recommend(movie):
-    if movie not in movies['title'].values:
-        return JSONResponse(content={"error": "Movie not found in dataset."}, status_code=404)
-
-    movie_index = movies[movies['title'] == movie].index[0]
-    distances = similarity[movie_index]
-    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
-
-    output = []
-    for i in movies_list:
-        movie_id = movies.iloc[i[0]].movie_id
-        movie_title = movies.iloc[i[0]].title
-        output.append({
-                "id": int(movie_id),
-                "title": movie_title
-                })
-
-    
-    return output
-
-
-
-movies_dict= pickle.load(open('data/movie_dict.pkl', 'rb'))
+# Load data
+movies_dict = pickle.load(open('data/movie_dict.pkl', 'rb'))
 movies = pd.DataFrame(movies_dict)
 similarity = pickle.load(open('data/similarity.pkl', 'rb'))
 
 app = FastAPI()
 
-# Allow requests from your frontend origin(s)
-origins = [
-    "http://localhost:3000",  # your Next.js frontend during development
-    # You can add your production frontend domain here too, e.g. "https://yourdomain.com"
-]
+# Load allowed origins from env var or fallback to default list
+origins = os.getenv("FRONTEND_ORIGINS").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,        # allow these origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],          # allow all HTTP methods (GET, POST, etc)
-    allow_headers=["*"],          # allow all headers
+    allow_methods=["GET"],  # only GET requests allowed
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "User-Agent", "X-Requested-With"],
 )
 
-class hero(BaseModel):
+
+class Hero(BaseModel):
     id: int
     name: str
     origin: str
 
-heroes: List[hero] = []
+heroes: List[Hero] = []
 
 @app.get("/")
 def read_root():
@@ -66,4 +43,20 @@ def all_movies():
 
 @app.get("/movies/{movie}")
 def get_movie(movie: str):
-    return recommend(movie)
+    if movie not in movies['title'].values:
+        raise HTTPException(status_code=404, detail="Movie not found in dataset.")
+    
+    movie_index = movies[movies['title'] == movie].index[0]
+    distances = similarity[movie_index]
+    movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
+
+    output = []
+    for i in movies_list:
+        movie_id = int(movies.iloc[i[0]].movie_id)
+        movie_title = movies.iloc[i[0]].title
+        output.append({
+            "id": movie_id,
+            "title": movie_title
+        })
+
+    return output
