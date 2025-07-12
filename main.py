@@ -11,11 +11,14 @@ def recommend(movie):
     distances = similarity[movie_index]
     movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
 
-    recommended_movies = []
+    output = []
     for i in movies_list:
         movie_id = i[0]
-        recommended_movies.append(movies.iloc[i[0]].title)
-    return [movie_id, recommended_movies]
+        movie_title = movies.iloc[movie_id].title
+        output.append((movie_id, movie_title))
+    
+    return output
+
 
 movies_dict= pickle.load(open('data/movie_dict.pkl', 'rb'))
 movies = pd.DataFrame(movies_dict)
