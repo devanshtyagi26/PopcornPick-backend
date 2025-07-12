@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import List
 import pickle
 import pandas as pd
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 def recommend(movie):
     movie_index = movies[movies['title'] == movie].index[0]
@@ -19,6 +21,20 @@ movies = pd.DataFrame(movies_dict)
 similarity = pickle.load(open('data/similarity.pkl', 'rb'))
 
 app = FastAPI()
+
+# Allow requests from your frontend origin(s)
+origins = [
+    "http://localhost:3000",  # your Next.js frontend during development
+    # You can add your production frontend domain here too, e.g. "https://yourdomain.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,        # allow these origins
+    allow_credentials=True,
+    allow_methods=["*"],          # allow all HTTP methods (GET, POST, etc)
+    allow_headers=["*"],          # allow all headers
+)
 
 class hero(BaseModel):
     id: int
