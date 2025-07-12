@@ -13,7 +13,7 @@ def recommend(movie):
 
     output = []
     for i in movies_list:
-        movie_id = i[0]
+        movie_id = movies.iloc[movie_id].movie_id
         movie_title = movies.iloc[movie_id].title
         output.append((movie_id, movie_title))
     
