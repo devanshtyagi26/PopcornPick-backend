@@ -5,8 +5,12 @@ import pickle
 import pandas as pd
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 def recommend(movie):
+    if movie not in movies['title'].values:
+        return JSONResponse(content={"error": "Movie not found in dataset."}, status_code=404)
+
     movie_index = movies[movies['title'] == movie].index[0]
     distances = similarity[movie_index]
     movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
@@ -15,9 +19,14 @@ def recommend(movie):
     for i in movies_list:
         movie_id = movies.iloc[i[0]].movie_id
         movie_title = movies.iloc[i[0]].title
-        output.append((movie_id, movie_title))
+        output.append({
+                "id": int(movie_id),
+                "title": movie_title
+                })
+
     
     return output
+
 
 
 movies_dict= pickle.load(open('data/movie_dict.pkl', 'rb'))
